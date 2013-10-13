@@ -11,7 +11,7 @@ byte dir;
 byte prevdir;
 byte gameover;
 byte newx,newy;
-byte newfruitx,newfruity;
+byte newfruitx,newfruity,fruitonboard;
 byte snlen;
 
 unsigned long Current;
@@ -31,6 +31,7 @@ void MakeMove(byte inx, byte iny) {
     gameover = 1;
   } else if(ReadPx(inx,iny)==Orange) {
     ++snlen;
+    --fruitonboard;
     SetAuxLEDs(snlen);
   } else {
     p=head->next;
@@ -58,8 +59,6 @@ void MakeMove(byte inx, byte iny) {
 void GameOverAnimation() {
   byte i;
   for(byte col=1;col<=4;++col) {
-    //for(i=0;i<=6;++i) {
-    //  DrawPx(i,7,col);
     for(i=col-1;i<=7-col;++i) {
       DrawPx(i,8-col,col);
       DisplaySlate();
@@ -91,6 +90,7 @@ void GameSetup() {
   PrevMove = Current;
   PrevFruit = Current;
   MoveInt = 1000; FruitInt = 3000;
+  fruitonboard=0;
   
   head = (sn*) malloc(sizeof(sn));
   head->x=4; head->y=4; head->prev=NULL;
@@ -132,7 +132,7 @@ void loop() {
   }
   
   Current = millis();
-  if(Current - PrevMove >= MoveInt) {
+  if(Current - PrevMove >= MoveInt - 5*snlen) {
     PrevMove = Current;
     switch(dir) {
       case UP:
@@ -162,13 +162,14 @@ void loop() {
     }
   }
   DisplaySlate();  
-  if(!gameover && Current - PrevFruit >= FruitInt) {
+  if(!gameover && fruitonboard<5 && Current - PrevFruit >= FruitInt || fruitonboard==0) {
     PrevFruit = Current;
     newfruitx=random(0,8); newfruity=random(0,8);
     while(ReadPx(newfruitx,newfruity)!=Dark) {
       newfruitx=random(0,8);
       newfruity=random(0,8);
     }
+    ++fruitonboard;
     DrawPx(newfruitx,newfruity,Orange);
     DisplaySlate();    
   }
